@@ -1,4 +1,13 @@
 /***************************************************
+ * Based on the fine examples and headers from Adafruit
+ * Written (poorly) by Mark Perino 
+ * Extending the MIT license, and since it's based on 
+ * existing Adafruit code, you must include their text bellow
+ */
+
+
+
+/***************************************************
   This is our GFX example for the Adafruit ILI9341 TFT FeatherWing
   ----> http://www.adafruit.com/products/3315
 
@@ -181,38 +190,20 @@ unsigned long depletionBars(uint16_t count) {
 //  tft.println(h);
   start = micros();
 // depleting bars
-  tft.fillRect(18*w/48, y1, w/12, -.8*h*pow(.99,count),ILI9341_CYAN);
+  if ( count <= 68) {
+    tft.fillRect(18*w/48, y1, w/12, -.8*h*pow(.99,count),ILI9341_CYAN); // make the bar cyan
+  }
+  else if ( count <=137) {
+    tft.fillRect(18*w/48, y1, w/12, -.8*h*pow(.99,count),ILI9341_YELLOW); // make the bar yellow
+  }
+  else {
+    tft.fillRect(18*w/48, y1, w/12, -.8*h*pow(.99,count),ILI9341_RED); // make the bar red
+  }
+    
   tft.fillRect(26*w/48, y1, w/12, -.5*h*pow(.99,count),ILI9341_YELLOW);
   tft.fillRect(34*w/48, y1, w/12, -.85*h*pow(.99,count),ILI9341_CYAN);
   tft.fillRect(42*w/48, y1, w/12, -.35*h*pow(.99,count),ILI9341_RED);
-//  tft.fillRect(19*w/48, y1, w/12, h/12, color);
-//  tft.fillRect(25*w/48, y1, w/12, h/12, color);
-//  tft.fillRect(31*w/48, y1, w/12, h/12, color);
-// top bars
-
   t     = micros() - start; // fillScreen doesn't count against timing
   yield();
   
-}
-
-
-unsigned long testFilledRects(uint16_t color1, uint16_t color2) {
-  unsigned long start, t = 0;
-  int           n, i, i2,
-                cx = tft.width()  / 2 - 1,
-                cy = tft.height() / 2 - 1;
-
-  tft.fillScreen(ILI9341_BLACK);
-  n = min(tft.width(), tft.height());
-  for(i=n; i>0; i-=6) {
-    i2    = i / 2;
-    start = micros();
-    tft.fillRect(cx-i2, cy-i2, i, i, color1);
-    t    += micros() - start;
-    // Outlines are not included in timing results
-    tft.drawRect(cx-i2, cy-i2, i, i, color2);
-    yield();
-  }
-
-  return t;
 }

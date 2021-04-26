@@ -18,5 +18,11 @@ Version 2 will do a better job and change the color from blue (100%-50%), Yellow
 
 If you ar curious the text is AL=Activity Level, BR=Breathing Rate, ST=?, HR=Heart Rate, 02=Oxygen.
 
+You will need to make sure that your Arduino IDE has the support for your board setup:
+for the nrf52 board:
+https://learn.adafruit.com/bluefruit-nrf52-feather-learning-guide/arduino-bsp-setup
 
-
+And install the required Libraries:
+Adafruit GFX
+Adafruit ILI9341
+gfxfont

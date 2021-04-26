@@ -1,29 +1,32 @@
-/***************************************************
+/***********************************************************************
  * Based on the fine examples and headers from Adafruit
  * Written (poorly) by Mark Perino 
+ * 
+ * Modified by Dan Shope April 2021
+ * Removed unused returns, libraries, and cleaned up timing.
+ * Changed graphics to only re-draw bar areas.
+ * Added a fifth bar for activity level, with random width
+ * 
  * Extending the MIT license, and since it's based on 
  * existing Adafruit code, you must include their text bellow
- */
 
-
-
-/***************************************************
-  This is our GFX example for the Adafruit ILI9341 TFT FeatherWing
-  ----> http://www.adafruit.com/products/3315
-
-  Check out the links above for our tutorials and wiring diagrams
-
-  Adafruit invests time and resources providing this open source code,
-  please support Adafruit and open-source hardware by purchasing
-  products from Adafruit!
-
-  Written by Limor Fried/Ladyada for Adafruit Industries.
-  MIT license, all text above must be included in any redistribution
- ****************************************************/
+ *  This is our GFX example for the Adafruit ILI9341 TFT FeatherWing
+ *  ----> http://www.adafruit.com/products/3315
+ *
+ *  Check out the links above for our tutorials and wiring diagrams
+ *
+ *  Adafruit invests time and resources providing this open source code,
+ *  please support Adafruit and open-source hardware by purchasing
+ *  products from Adafruit!
+ *
+ *  Written by Limor Fried/Ladyada for Adafruit Industries.
+ *  MIT license, all text above must be included in any redistribution
+ ************************************************************************/
 
 #include <SPI.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_ILI9341.h>
+#include <gfxfont.h>
 
 #ifdef ESP8266
    #define STMPE_CS 16
@@ -78,132 +81,135 @@ unsigned long countdown;
   
 void setup() {
   Serial.begin(115200);
+  delay(10); //let screen fully boot
 
   tft.begin();
   tft.fillScreen(ILI9341_WHITE);
+  yield();
   delay(1000);
+  
   tft.fillScreen(ILI9341_BLACK);
   yield();
   delay(1000);
+  
   tft.setRotation(0);
-  bootText();
+  drawBootText();
   delay(5000);
   countdown = 0;
-  
 
+  tft.fillScreen(ILI9341_BLACK);
+  yield();
+
+  //draw static parts
+  drawLines(ILI9341_WHITE);
+  drawLabels(ILI9341_WHITE);
+  drawStatusBar(ILI9341_GREEN);
 }
 
 
 void loop(void) {
-    countdown= countdown +1;
+    countdown++; //increment by one
+    
     tft.setRotation(0);
-    airLines(ILI9341_WHITE);
-    airText();
-    airStatusBar(ILI9341_GREEN);
-    depletionBars(countdown);
-    delay(60000);
-    tft.fillScreen(ILI9341_BLACK);
-    delay(10);
-  
+    drawDepletionBars(countdown, true);
+
+    //****** ANIMATION TIMER *******/
+    //wait before continuing to count
+    delay(1000); //was 60000 for one minute
+    //****** END ANIMATION TIMER *******/
+
+    //animation reset after 6 hours (if delay is 60000)
+    if(countdown > 360) {
+      countdown = 0;
+    }
 }
 
-
-
-unsigned long bootText() {
-  tft.fillScreen(ILI9341_BLACK);
-  unsigned long start = micros();
+void drawBootText() {
   tft.setCursor(0, 0);
   tft.setTextColor(ILI9341_WHITE);  tft.setTextSize(2);
   tft.println("Booting Pn'K PackOS");
   tft.setTextColor(ILI9341_YELLOW); tft.setTextSize(2);
   tft.println("Ver 19.2.1");
   tft.setTextColor(ILI9341_RED);    tft.setTextSize(3);
-  tft.println("IH Canturbury");
-  tft.println();
-  return micros() - start;
+  tft.println("IH Canterbury"); //fixed spelling
 }
 
-unsigned long airText() {
-  unsigned long start = micros();
+void drawLabels(uint16_t color) {
   tft.setRotation(3);
   tft.setCursor(10, 10);
-  tft.setTextColor(ILI9341_WHITE);  tft.setTextSize(3);
+  tft.setTextColor(color);  tft.setTextSize(3);
   tft.println("AL BR ST HR BP 02");
-  tft.println();
-  return micros() - start;
 }
 
 
-unsigned long airLines(uint16_t color) {
-  unsigned long start, t;
+void drawLines(uint16_t color) {
   int           x1, y1, x2, y2,
                 w = tft.width(),
                 h = tft.height();
 
-  tft.fillScreen(ILI9341_BLACK);
-  yield();
-  
+  tft.setRotation(0);
   x1 = x2 = y1 = 0;
-  y2    = h - 1;
-  start = micros();
-  for(x1=0; x1<w; x1+=w/6) tft.drawLine(x1, y1, x1, y2, color);
-  t     = micros() - start; // fillScreen doesn't count against timing
+  y2 = h - 1;
+  for(x1=0; x1<w; x1+=w/6) {
+    tft.drawLine(x1, y1, x1, y2, color);
+  }
   yield();
-  
 }
 
-unsigned long airStatusBar(uint16_t color) {
-  unsigned long start, t;
+void drawStatusBar(uint16_t color) {
   int           x1,
                 w = tft.width(),
                 h = tft.height();
-  
   x1 = 0;
 
   tft.setRotation(0);
-//  tft.println(h);
-  start = micros();
-// bottom bars
-  for(x1=7*w/48; x1<w; x1+=6*w/48) tft.fillRect(x1, 23*w/24, w/12, h/12, color);
-//  tft.fillRect(7*w/48, y1, w/12, h/12, color);
-//  tft.fillRect(13*w/48, y1, w/12, h/12, color);
-//  tft.fillRect(19*w/48, y1, w/12, h/12, color);
-//  tft.fillRect(25*w/48, y1, w/12, h/12, color);
-//  tft.fillRect(31*w/48, y1, w/12, h/12, color);
-// top bars
-  for(x1=7*w/48; x1<w; x1+=6*w/48) tft.fillRect(x1, 0, w/12, h/12, color);
-  t     = micros() - start; // fillScreen doesn't count against timing
-  yield();
+  // bottom bars
+  for(x1=(int)(7*w/48); x1<w; x1+=(int)(6*w/48)) {
+    tft.fillRect(x1, 23*w/24, w/12, h/12, color);
+    yield();
+  }
   
+  // top bars
+  for(x1=(int)(7*w/48); x1<w; x1+=(int)(6*w/48)) {
+    tft.fillRect(x1, 0, w/12, h/12, color);
+    yield();
+  }
 }
 
-unsigned long depletionBars(uint16_t count) {
-  unsigned long start, t;
-  int           x1,
-                w = tft.width(),
-                h = tft.height(),
-                y1 = 22*h/24;
+void drawDepletionBars(uint16_t count, bool clearScreen) {
+  int           maxw,
+                w = tft.width(),  //240
+                h = tft.height(), //320
+                y1 = 22*h/24,
+                bh = w/48,  //scalar for x0 coord
+                bw = w/12;  //bar thickness (fixed)
   
-  x1 = 0;
+  maxw = -0.85 * h; //pow(0.99,0) = 1 //max bar width [-0.85 * h * 0.99^count] = 272px?
 
   tft.setRotation(0);
-//  tft.println(h);
-  start = micros();
-// depleting bars
-  if ( count <= 68) {
-    tft.fillRect(18*w/48, y1, w/12, -.8*h*pow(.99,count),ILI9341_CYAN); // make the bar cyan
-  }
-  else if ( count <=137) {
-    tft.fillRect(18*w/48, y1, w/12, -.8*h*pow(.99,count),ILI9341_YELLOW); // make the bar yellow
-  }
-  else {
-    tft.fillRect(18*w/48, y1, w/12, -.8*h*pow(.99,count),ILI9341_RED); // make the bar red
-  }
-    
-  tft.fillRect(26*w/48, y1, w/12, -.5*h*pow(.99,count),ILI9341_YELLOW);
-  tft.fillRect(34*w/48, y1, w/12, -.85*h*pow(.99,count),ILI9341_CYAN);
-  tft.fillRect(42*w/48, y1, w/12, -.35*h*pow(.99,count),ILI9341_RED);
-  t     = micros() - start; // fillScreen doesn't count against timing
-  yield();
+
+  if(clearScreen) tft.fillRect(10*bh, y1, bw, maxw, ILI9341_BLACK);  //erase last block
+  tft.fillRect(10*bh, y1, bw, -1*random(50,-1*maxw),ILI9341_YELLOW); // make the bar yellow
   
+  if(clearScreen) tft.fillRect(18*bh, y1, bw, maxw, ILI9341_BLACK);  //erase last block
+  if ( count <= 68) {
+    tft.fillRect(18*bh, y1, bw, -.8*h*pow(.99,count),ILI9341_CYAN);   // make the bar cyan
+  } else if ( count <=137) {
+    tft.fillRect(18*bh, y1, bw, -.8*h*pow(.99,count),ILI9341_YELLOW); // make the bar yellow
+  } else {
+    tft.fillRect(18*bh, y1, bw, -.8*h*pow(.99,count),ILI9341_RED);    // make the bar red
+  }
+  yield();
+
+  if(clearScreen) tft.fillRect(26*bh, y1, bw, maxw, ILI9341_BLACK);   //erase last block
+  tft.fillRect(26*bh, y1, bw, -.5*h*pow(.99,count),ILI9341_YELLOW);
+  yield();
+
+  if(clearScreen) tft.fillRect(34*bh, y1, bw, maxw, ILI9341_BLACK);   //erase last block
+  tft.fillRect(34*bh, y1, bw, -.85*h*pow(.99,count),ILI9341_CYAN);
+  yield();
+
+  if(clearScreen) tft.fillRect(42*bh, y1, bw, maxw, ILI9341_BLACK);   //erase last block
+  tft.fillRect(42*w/48, y1, bw, -.35*h*pow(.99,count),ILI9341_RED);
+  yield();
 }
